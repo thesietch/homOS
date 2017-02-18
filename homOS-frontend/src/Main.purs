@@ -5,7 +5,7 @@ import Control.Monad.Eff (Eff)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 import Network.HTTP.Affjax as AX
-import Component (ui)
+import App (ui)
 
 -- | Run the app.
 main :: Eff (HA.HalogenEffects (ajax :: AX.AJAX)) Unit

@@ -1,4 +1,4 @@
-module Component (State, Query(..), ui) where
+module Weather (State, Query(..), Slot(..), ui) where
 
 import Prelude
 import Control.Monad.Aff (Aff)
@@ -18,6 +18,10 @@ type State =
 data Query a
   = SetUsername String a
   | MakeRequest a
+
+data Slot = Slot
+derive instance eqSlotWeather :: Eq Slot
+derive instance ordSlotWeather :: Ord Slot
 
 ui :: forall eff. H.Component HH.HTML Query Unit Void (Aff (ajax :: AX.AJAX | eff))
 ui =
