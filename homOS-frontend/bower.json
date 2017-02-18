@@ -1,0 +1,8 @@
+{
+  "name": "homOS-frontend",
+  "private": true,
+  "dependencies": {
+    "purescript-affjax": "^3.0.0",
+    "purescript-halogen": "*"
+  }
+}
