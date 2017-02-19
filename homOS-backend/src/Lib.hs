@@ -9,6 +9,7 @@ module Lib
     , app
     ) where
 
+import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
 import qualified Data.Text
@@ -31,7 +32,7 @@ data Commute = Commute
   { lat :: Text
   , lon :: Text
   , name :: Text
-  , leaving :: Text
+  , leaving :: UTCTime
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Commute)
@@ -85,4 +86,4 @@ topLevelToCommute (StopsByLocation.TopLevel {..}) (PredictionsByStop.TopLevel {.
       RouteElt {routeEltDirection} <- listToMaybe modeEltRoute
       DirectionElt {directionEltTrip} <- listToMaybe routeEltDirection
       TripElt {tripEltPreDt} <- listToMaybe directionEltTrip
-      pure tripEltPreDt
+      pure $ parseTimeOrError True defaultTimeLocale "%s" (Data.Text.unpack tripEltPreDt)

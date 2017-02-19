@@ -22,6 +22,7 @@ library
                      , aeson
                      , servant-server
                      , bytestring
+                     , time
                      , http-conduit
                      , json-autotype
                      , text
@@ -44,6 +45,11 @@ test-suite homOS-backend-test
   build-depends:       base
                      , homOS-backend
                      , here
+                     , time
+                     , text
+                     , wai-extra
+                     , http-types
+                     , unordered-containers
                      , bytestring
                      , hspec
                      , hspec-wai
