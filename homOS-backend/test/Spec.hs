@@ -12,9 +12,9 @@ main = hspec spec
 
 spec :: Spec
 spec = with (return app) $ do
-    describe "GET /users" $ do
-        it "responds with 200" $ do
-            get "/users" `shouldRespondWith` 200
-        it "responds with [User]" $ do
-            let users = "[{\"userId\":1,\"userFirstName\":\"Isaac\",\"userLastName\":\"Newton\"},{\"userId\":2,\"userFirstName\":\"Albert\",\"userLastName\":\"Einstein\"}]"
-            get "/users" `shouldRespondWith` users
+  describe "GET /commutes/:person" $ do
+    it "responds with 200" $ do
+      get "/commutes/alex" `shouldRespondWith` 200
+    it "responds with [CommuteStart]" $ do
+      let commutes = "[{\"lat\":\"42.309949\",\"lon\":\"-71.115345\",\"name\":\"775CentreSt\",\"leaving\":\"2017-04-23T18:25:43.511Z\"}]"
+      get "/commutes/alex" `shouldRespondWith` commutes

@@ -8,19 +8,21 @@ module Lib
 
 import Data.Aeson
 import Data.Aeson.TH
+import Data.Text
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
 
-data User = User
-  { userId        :: Int
-  , userFirstName :: String
-  , userLastName  :: String
+data Commute = Commute
+  { lat :: String
+  , lon :: String
+  , name :: String
+  , leaving :: String
   } deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''User)
+$(deriveJSON defaultOptions ''Commute)
 
-type API = "users" :> Get '[JSON] [User]
+type API = "commutes" :> Capture "person" Text :> Get '[JSON] [Commute]
 
 startApp :: IO ()
 startApp = run 8080 app
@@ -32,9 +34,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = return users
+server _ = return commutes
 
-users :: [User]
-users = [ User 1 "Isaac" "Newton"
-        , User 2 "Albert" "Einstein"
-        ]
+commutes :: [Commute]
+commutes = [ Commute "42.309949" "-71.115345" "775CentreSt" "2017-04-23T18:25:43.511Z" ]
