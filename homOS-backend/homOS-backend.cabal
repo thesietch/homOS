@@ -39,6 +39,7 @@ test-suite homOS-backend-test
   main-is:             Spec.hs
   build-depends:       base
                      , homOS-backend
+                     , here
                      , hspec
                      , hspec-wai
                      , hspec-wai-json
