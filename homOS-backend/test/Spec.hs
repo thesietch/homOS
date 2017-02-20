@@ -26,13 +26,13 @@ asJSONValue = fromMaybe (object []) . decode
 fixturize :: FromValue a => B.ByteString -> a
 fixturize = fromValue . asJSONValue
 
-shouldMatchSchema :: HasCallStack => WaiSession SResponse -> (SResponse -> Maybe String) -> WaiExpectation
-shouldMatchSchema action matcher = do
+shouldConformTo :: HasCallStack => WaiSession SResponse -> (SResponse -> Maybe String) -> WaiExpectation
+shouldConformTo action matcher = do
   r <- action
   forM_ (matcher r) (liftIO . expectationFailure)
 
-matchSchema :: (Value -> Bool) -> SResponse -> Maybe String
-matchSchema f (SResponse (Status status _) headers body) = do
+jsonSchema :: (Value -> Bool) -> SResponse -> Maybe String
+jsonSchema f (SResponse (Status status _) headers body) = do
   guard $ status == 200
   let body' = asJSONValue body
   guard . not $ f body'
@@ -59,4 +59,4 @@ spec = with (return app) $ do
     it "responds with 200" $ do
       get "/commutes/alex" `shouldRespondWith` 200
     it "responds with [Commute]" $ do
-      get "/commutes/alex" `shouldMatchSchema` matchSchema isValidCommute
+      get "/commutes/alex" `shouldConformTo` jsonSchema isValidCommute
