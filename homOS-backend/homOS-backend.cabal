@@ -24,6 +24,7 @@ library
                      , bytestring
                      , time
                      , http-conduit
+                     , vector
                      , json-autotype
                      , text
                      , wai
@@ -49,6 +50,7 @@ test-suite homOS-backend-test
                      , text
                      , wai-extra
                      , http-types
+                     , vector
                      , unordered-containers
                      , bytestring
                      , hspec

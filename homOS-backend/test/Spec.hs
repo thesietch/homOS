@@ -3,10 +3,13 @@
 module Main (main) where
 
 import Lib (app)
+import Debug.Trace (traceShowId)
+import qualified Data.Vector as V
 import Test.Hspec
 import Data.Text (Text(..))
 import Test.Hspec.Wai
 import qualified Data.HashMap.Strict as HM
+import qualified Data.HashSet as HS
 import Network.HTTP.Types (Status(..))
 import Network.Wai.Test (SResponse(..))
 import Test.Hspec.Wai.JSON
@@ -28,12 +31,24 @@ shouldMatchSchema action matcher = do
   r <- action
   forM_ (matcher r) (liftIO . expectationFailure)
 
-matchSchema :: (HM.HashMap Text Value -> Bool) -> SResponse -> Maybe String
+matchSchema :: (Value -> Bool) -> SResponse -> Maybe String
 matchSchema f (SResponse (Status status _) headers body) = do
-  guard $ status /= 200
-  let (Object body') = asJSONValue body
-  guard $ f body'
-  pure ""
+  guard $ status == 200
+  let body' = asJSONValue body
+  guard . not $ f body'
+  pure "Schema does not match"
+
+isValidCommute :: Value -> Bool
+isValidCommute (Array v) = providedKeys == requiredKeys
+  && withoutLeavingFixture == withoutLeavingResponse
+  where
+    (Object hm) = V.head v
+    providedKeys = HS.fromList $ HM.keys hm
+    requiredKeys = HS.fromList $ HM.keys fixtureElem
+    withoutLeavingFixture = HM.delete "leaving" fixtureElem
+    withoutLeavingResponse = HM.delete "leaving" hm
+    (Array fixture) = asJSONValue [hereFile|./test/fixtures/commutes.json|]
+    (Object fixtureElem) = V.head fixture
 
 main :: IO ()
 main = hspec spec
@@ -44,5 +59,4 @@ spec = with (return app) $ do
     it "responds with 200" $ do
       get "/commutes/alex" `shouldRespondWith` 200
     it "responds with [Commute]" $ do
-      let commutes = fixturize [hereFile|./test/fixtures/commutes.json|]
-      get "/commutes/alex" `shouldRespondWith` commutes
+      get "/commutes/alex" `shouldMatchSchema` matchSchema isValidCommute
