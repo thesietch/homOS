@@ -18,6 +18,7 @@ import Data.List (find)
 import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (listToMaybe, maybeToList)
 import Network.Wai
+import Network.Wai.Logger
 import Network.Wai.Handler.Warp
 import Servant
 -- for accessing 3rd party APIs
@@ -40,7 +41,11 @@ $(deriveJSON defaultOptions ''Commute)
 type API = "commutes" :> Capture "person" Text :> Get '[JSON] [Commute]
 
 startApp :: IO ()
-startApp = run 8080 app
+startApp = do
+  putStrLn "running on 127.0.0.1:8080"
+  withStdoutLogger $ \aplogger -> do
+      let settings = setPort 8080 $ setLogger aplogger defaultSettings
+      runSettings settings app
 
 app :: Application
 app = serve api server
@@ -61,11 +66,12 @@ getCommutes = do
         topLevelToCommute stops predictions
   pure $ maybeToList maybeCommute
 
-outboundPredictionsURL :: String
-outboundPredictionsURL = "http://realtime.mbta.com/developer/api/v2/predictionsbystop?api_key=wX9NwuHnZU2ToO7GmGR9uw&stop=99991&format=json"
+outboundPredictionsURL :: String -> String
+outboundPredictionsURL stopId = "http://realtime.mbta.com/developer/api/v2/predictionsbystop?api_key=wX9NwuHnZU2ToO7GmGR9uw&stop=" ++ stopId ++ "&format=json"
+defaultStopId = "99991"
 
 getPredictionsJSON :: IO B.ByteString
-getPredictionsJSON = simpleHttp outboundPredictionsURL
+getPredictionsJSON = simpleHttp (outboundPredictionsURL defaultStopId)
 
 stopsByLocationURL :: String
 stopsByLocationURL = "http://realtime.mbta.com/developer/api/v2/stopsbylocation?api_key=wX9NwuHnZU2ToO7GmGR9uw&lat=42.3097361&lon=-71.1151431&format=json"

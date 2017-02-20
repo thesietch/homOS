@@ -25,6 +25,7 @@ library
                      , time
                      , http-conduit
                      , vector
+                     , wai-logger
                      , json-autotype
                      , text
                      , wai
