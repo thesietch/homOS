@@ -32,10 +32,10 @@ shouldConformTo action matcher = do
   forM_ (matcher r) (liftIO . expectationFailure)
 
 jsonSchema :: (Value -> Bool) -> SResponse -> Maybe String
-jsonSchema f (SResponse (Status status _) headers body) = do
+jsonSchema isValid (SResponse (Status status _) headers body) = do
   guard $ status == 200
   let body' = asJSONValue body
-  guard . not $ f body'
+  guard . not $ isValid body'
   pure "Schema does not match"
 
 isValidCommute :: Value -> Bool
