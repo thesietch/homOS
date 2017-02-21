@@ -1,10 +1,11 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE NamedFieldPuns     #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE RecordWildCards    #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell    #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NamedFieldPuns             #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeOperators              #-}
 module Lib
     ( startApp
     , app
@@ -17,7 +18,7 @@ import qualified Data.ByteString.Lazy     as B
 import           Data.List                (find)
 import           Data.Maybe               (listToMaybe, maybeToList)
 import           Data.Text                (Text (..))
-import qualified Data.Text
+import qualified Data.Text                as T
 import           Data.Time
 import           Data.Time.LocalTime
 import           Destination
@@ -32,9 +33,15 @@ import           Servant
 import           StopsByLocation          (StopElt (..))
 import qualified StopsByLocation
 
+newtype Latitude = Latitude Double
+  deriving (Eq, Show, Ord, ToJSON, FromJSON)
+
+newtype Longitude = Longitude Double
+  deriving (Eq, Show, Ord, ToJSON, FromJSON)
+
 data Commute = Commute
-  { lat         :: Text
-  , lon         :: Text
+  { lat         :: Latitude
+  , lon         :: Longitude
   , name        :: Text
   , leaving     :: ZonedTime
   , destination :: Destination
@@ -98,12 +105,12 @@ topLevelToCommute tz destination (StopsByLocation.TopLevel {..}) (PredictionsByS
   where
     stop = find (\(StopElt {..}) -> stopEltStopId == topLevelStopId ) topLevelStop
     name = pure topLevelStopName
-    lat = fmap stopEltStopLat stop
-    lon = fmap stopEltStopLon stop
+    lat = fmap (Latitude . read . T.unpack . stopEltStopLat) stop
+    lon = fmap (Longitude . read . T.unpack . stopEltStopLon) stop
     timestamp = do
       ModeElt {modeEltRoute} <- listToMaybe topLevelMode
       RouteElt {routeEltDirection} <- listToMaybe modeEltRoute
       DirectionElt {directionEltTrip} <- listToMaybe routeEltDirection
       TripElt {tripEltPreDt} <- listToMaybe directionEltTrip
-      let utcTime = parseTimeOrError True defaultTimeLocale "%s" (Data.Text.unpack tripEltPreDt)
+      let utcTime = parseTimeOrError True defaultTimeLocale "%s" (T.unpack tripEltPreDt)
       pure $ utcToZonedTime tz utcTime
