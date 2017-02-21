@@ -26,21 +26,27 @@ asJSONValue = fromMaybe (object []) . decode
 fixturize :: FromValue a => B.ByteString -> a
 fixturize = fromValue . asJSONValue
 
-shouldConformTo :: HasCallStack => WaiSession SResponse -> (SResponse -> Maybe String) -> WaiExpectation
+shouldConformTo :: HasCallStack => WaiSession SResponse -> (SResponse -> Expectation) -> WaiExpectation
 shouldConformTo action matcher = do
   r <- action
-  forM_ (matcher r) (liftIO . expectationFailure)
+  liftIO $ matcher r
 
-jsonSchema :: (Value -> Bool) -> SResponse -> Maybe String
+jsonSchema :: (Value -> Expectation) -> SResponse -> Expectation
 jsonSchema isValid (SResponse (Status status _) headers body) = do
   guard $ status == 200
   let body' = asJSONValue body
-  guard . not $ isValid body'
-  pure "Schema does not match"
+  isValid body'
 
-isValidCommute :: Value -> Bool
-isValidCommute (Array v) = providedKeys == requiredKeys
-  && withoutLeavingFixture == withoutLeavingResponse
+isAllCommutes :: Value -> Expectation
+isAllCommutes (Array v) = names `shouldBe` requiredNames
+  where
+    requiredNames = HS.fromList ["South St @ Bardwell St", "775 Centre St"]
+    names = HS.fromList . map (\(Object e) -> HM.lookupDefault "idk" "name" e) $ V.toList v
+
+isValidCommute :: Value -> Expectation
+isValidCommute (Array v) = do
+  providedKeys `shouldBe` requiredKeys
+  withoutLeavingResponse `shouldBe` withoutLeavingFixture
   where
     (Object hm) = V.head v
     providedKeys = HS.fromList $ HM.keys hm
@@ -60,3 +66,5 @@ spec = with (return app) $ do
       get "/commutes/alex" `shouldRespondWith` 200
     it "responds with [Commute]" $ do
       get "/commutes/alex" `shouldConformTo` jsonSchema isValidCommute
+    it "responds with all valid commutes for Alex" $ do
+      get "/commutes/alex" `shouldConformTo` jsonSchema isAllCommutes
