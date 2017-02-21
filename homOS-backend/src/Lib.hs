@@ -31,10 +31,11 @@ import           StopsByLocation          (StopElt (..))
 import qualified StopsByLocation
 
 data Commute = Commute
-  { lat     :: Text
-  , lon     :: Text
-  , name    :: Text
-  , leaving :: UTCTime
+  { lat         :: Text
+  , lon         :: Text
+  , name        :: Text
+  , leaving     :: UTCTime
+  , destination :: Destination
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Commute)
@@ -72,7 +73,7 @@ getCommutes destination = do
   let maybeCommute = do
         predictions <- maybePredictions
         stops <- maybeStops
-        topLevelToCommute stops predictions
+        topLevelToCommute destination stops predictions
   pure $ maybeToList maybeCommute
 
 outboundPredictionsURL :: StopId -> String
@@ -87,9 +88,8 @@ stopsByLocationURL = "http://realtime.mbta.com/developer/api/v2/stopsbylocation?
 getStopsJSON :: IO B.ByteString
 getStopsJSON = simpleHttp stopsByLocationURL
 
--- modes -> routes -> directions -> trips -> trip -> trip.pre_dt
-topLevelToCommute :: StopsByLocation.TopLevel -> PredictionsByStop.TopLevel -> Maybe Commute
-topLevelToCommute (StopsByLocation.TopLevel {..}) (PredictionsByStop.TopLevel {..}) = Commute <$> lat <*> lon <*> name <*> timestamp
+topLevelToCommute :: Destination -> StopsByLocation.TopLevel -> PredictionsByStop.TopLevel -> Maybe Commute
+topLevelToCommute destination (StopsByLocation.TopLevel {..}) (PredictionsByStop.TopLevel {..}) = Commute <$> lat <*> lon <*> name <*> timestamp <*> pure destination
   where
     stop = find (\(StopElt {..}) -> stopEltStopId == topLevelStopId ) topLevelStop
     name = pure topLevelStopName

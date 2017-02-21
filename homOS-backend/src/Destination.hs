@@ -1,21 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Destination where
-import Web.HttpApiData
-import Data.Monoid ((<>))
+import           Data.Aeson.TH
+import           Data.Monoid     ((<>))
+import           Web.HttpApiData
 
-data Person = Alex
+data Person = Alex | Other
+  deriving (Eq, Show)
+$(deriveJSON defaultOptions ''Person)
 instance FromHttpApiData Person where
   parseUrlPiece "alex" = Right Alex
   parseUrlPiece x = Left $ "not a person: " <> x
 
 data Location = Work
               | Appt
+  deriving (Eq, Show)
+$(deriveJSON defaultOptions ''Location)
 instance FromHttpApiData Location where
   parseUrlPiece "work" = Right Work
   parseUrlPiece "appt" = Right Appt
   parseUrlPiece x = Left $ "not a location: " <> x
 
 data Destination = Destination Person Location
+  deriving (Eq, Show)
+$(deriveJSON defaultOptions ''Destination)
 
 newtype StopId = StopId String
 

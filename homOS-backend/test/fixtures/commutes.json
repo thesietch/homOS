@@ -3,7 +3,20 @@
     "lat": "42.308378",
     "lon": "-71.115619",
     "name": "South St @ Bardwell St",
-    "leaving": "2017-04-23T18:25.51Z"
+    "leaving": "2017-02-21T02:39:07Z",
+    "destination": [
+      "Alex",
+      "Work"
+    ]
   },
-  {"lat":"42.309949","lon":"-71.115345","name":"775 Centre St","leaving":"2017-02-21T01:34:09Z"}
+  {
+    "lat": "42.309949",
+    "lon": "-71.115345",
+    "name": "775 Centre St",
+    "leaving": "2017-02-21T02:38:39Z",
+    "destination": [
+      "Alex",
+      "Appt"
+    ]
+  }
 ]
