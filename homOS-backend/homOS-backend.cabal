@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Destination
                      , StopsByLocation
                      , PredictionsByStop
   build-depends:       base >= 4.7 && < 5
@@ -25,6 +26,7 @@ library
                      , time
                      , http-conduit
                      , vector
+                     , http-api-data
                      , wai-logger
                      , json-autotype
                      , text
