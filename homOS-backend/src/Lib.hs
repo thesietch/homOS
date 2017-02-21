@@ -1,9 +1,10 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE NamedFieldPuns    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE NamedFieldPuns     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeOperators      #-}
 module Lib
     ( startApp
     , app
@@ -18,6 +19,7 @@ import           Data.Maybe               (listToMaybe, maybeToList)
 import           Data.Text                (Text (..))
 import qualified Data.Text
 import           Data.Time
+import           Data.Time.LocalTime
 import           Destination
 import           Network.HTTP.Conduit     (simpleHttp)
 import           Network.Wai
@@ -34,9 +36,11 @@ data Commute = Commute
   { lat         :: Text
   , lon         :: Text
   , name        :: Text
-  , leaving     :: UTCTime
+  , leaving     :: ZonedTime
   , destination :: Destination
   } deriving (Eq, Show)
+
+deriving instance Eq ZonedTime
 
 $(deriveJSON defaultOptions ''Commute)
 
@@ -70,10 +74,11 @@ getCommutes :: Destination -> IO [Commute]
 getCommutes destination = do
   maybePredictions <- fmap decode $ getPredictionsJSON destination
   maybeStops <- fmap decode getStopsJSON
+  tz <- getCurrentTimeZone
   let maybeCommute = do
         predictions <- maybePredictions
         stops <- maybeStops
-        topLevelToCommute destination stops predictions
+        topLevelToCommute tz destination stops predictions
   pure $ maybeToList maybeCommute
 
 outboundPredictionsURL :: StopId -> String
@@ -88,8 +93,8 @@ stopsByLocationURL = "http://realtime.mbta.com/developer/api/v2/stopsbylocation?
 getStopsJSON :: IO B.ByteString
 getStopsJSON = simpleHttp stopsByLocationURL
 
-topLevelToCommute :: Destination -> StopsByLocation.TopLevel -> PredictionsByStop.TopLevel -> Maybe Commute
-topLevelToCommute destination (StopsByLocation.TopLevel {..}) (PredictionsByStop.TopLevel {..}) = Commute <$> lat <*> lon <*> name <*> timestamp <*> pure destination
+topLevelToCommute :: TimeZone -> Destination -> StopsByLocation.TopLevel -> PredictionsByStop.TopLevel -> Maybe Commute
+topLevelToCommute tz destination (StopsByLocation.TopLevel {..}) (PredictionsByStop.TopLevel {..}) = Commute <$> lat <*> lon <*> name <*> timestamp <*> pure destination
   where
     stop = find (\(StopElt {..}) -> stopEltStopId == topLevelStopId ) topLevelStop
     name = pure topLevelStopName
@@ -100,4 +105,5 @@ topLevelToCommute destination (StopsByLocation.TopLevel {..}) (PredictionsByStop
       RouteElt {routeEltDirection} <- listToMaybe modeEltRoute
       DirectionElt {directionEltTrip} <- listToMaybe routeEltDirection
       TripElt {tripEltPreDt} <- listToMaybe directionEltTrip
-      pure $ parseTimeOrError True defaultTimeLocale "%s" (Data.Text.unpack tripEltPreDt)
+      let utcTime = parseTimeOrError True defaultTimeLocale "%s" (Data.Text.unpack tripEltPreDt)
+      pure $ utcToZonedTime tz utcTime
