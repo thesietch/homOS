@@ -56,8 +56,14 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = (\person -> liftIO $ getCommutes (Destination person Work))
-  :<|> (\person location -> liftIO $ getCommutes (Destination person location))
+server = commutesByPerson
+  :<|> commutesByPersonAndLocation
+
+commutesByPerson person = liftIO $ do
+  work <- getCommutes (Destination person Work)
+  appt <- getCommutes (Destination person Appt)
+  return $ work ++ appt
+commutesByPersonAndLocation person location = liftIO $ getCommutes (Destination person location)
 
 getCommutes :: Destination -> IO [Commute]
 getCommutes destination = do
